@@ -1,0 +1,143 @@
+# =============================================================================
+# CloudManagerPro — production stack (single Linux VM)
+#
+#   caddy     -> the ONLY service published to the host (80/443), auto-HTTPS,
+#                reverse-proxies /api/* to backend and everything else to frontend
+#   frontend  -> Next.js standalone server (internal only)
+#   backend   -> Spring Boot API (internal only), runs Flyway migrations on start
+#   postgres  -> PostgreSQL 16 (internal only, no published ports), named volume
+#   pgadmin   -> optional DB UI, only with `--profile tools`
+#
+# Usage:
+#   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#
+# All configuration/secrets come from the --env-file; nothing is hardcoded.
+# =============================================================================
+
+name: cloudmanagerpro
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    # No `ports:` — the database is never exposed outside the internal network.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      ENABLE_DEMO_DATA: ${ENABLE_DEMO_DATA}
+      ENABLE_REAL_CLOUD_ACTIONS: ${ENABLE_REAL_CLOUD_ACTIONS}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        # Inlined into the client bundle at build time; same-origin behind Caddy.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - internal
+    healthcheck:
+      # 127.0.0.1 (not localhost): busybox wget resolves localhost to IPv6 ::1
+      # first and won't fall back to the IPv4 0.0.0.0 the server binds.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    healthcheck:
+      # Caddy admin API (127.0.0.1:2019, IPv4) — use the IP, not localhost (::1).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:2019/config/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Optional DB admin UI. Start with: `... --profile tools up -d pgadmin`
+  pgadmin:
+    image: dpage/pgadmin4:8
+    restart: unless-stopped
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@cloudmanagerpro.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change_me_pgadmin}
+      PGADMIN_LISTEN_PORT: 80
+    depends_on:
+      - postgres
+    networks:
+      - internal
+    # Bound to localhost only — reach it via an SSH tunnel, never exposed publicly.
+    ports:
+      - "127.0.0.1:5050:80"

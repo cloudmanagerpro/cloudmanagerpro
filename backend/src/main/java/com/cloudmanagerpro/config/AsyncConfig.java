@@ -1,0 +1,30 @@
+package com.cloudmanagerpro.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+
+/**
+ * Enables {@code @Async} and provides a small bounded pool used for post-action re-sync so a
+ * successful cloud mutation refreshes the affected account's resources without blocking the request.
+ */
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    @Bean(name = "postActionExecutor")
+    public Executor postActionExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("cmp-action-sync-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(20);
+        executor.initialize();
+        return executor;
+    }
+}

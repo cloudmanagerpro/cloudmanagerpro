@@ -1,0 +1,23 @@
+# Build output (the image builds the jar itself inside the build stage)
+target/
+
+# VCS / tooling
+.git/
+.gitignore
+.gitattributes
+
+# Editor / OS cruft
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Logs
+*.log
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Docs (not needed for the build)
+*.md

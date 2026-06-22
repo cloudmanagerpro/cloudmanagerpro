@@ -1,0 +1,20 @@
+create table cleanup_candidates (
+    id                        uuid primary key,
+    user_id                   uuid        not null,
+    resource_id               uuid,
+    cloud_account_id          uuid,
+    provider                  varchar(16) not null,
+    resource_type             varchar(32),
+    candidate_type            varchar(32) not null,
+    reason                    text,
+    severity                  varchar(16) not null default 'LOW',
+    estimated_monthly_savings numeric(18,4) default 0,
+    status                    varchar(16) not null default 'PENDING',
+    recommended_action        varchar(32),
+    region                    varchar(64),
+    resource_name             varchar(255),
+    resource_external_id      varchar(255),
+    detected_at               timestamptz,
+    created_at                timestamptz not null,
+    updated_at                timestamptz not null
+);

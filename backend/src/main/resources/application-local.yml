@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/cloudmanagerpro}
+    username: ${DATABASE_USERNAME:cloudmanager}
+    password: ${DATABASE_PASSWORD:cloudmanager}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  demo:
+    enabled: ${ENABLE_DEMO_DATA:true}
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:3000}
+
+logging:
+  level:
+    com.cloudmanagerpro: DEBUG

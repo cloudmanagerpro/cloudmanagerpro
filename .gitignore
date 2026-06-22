@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Next.js / frontend build output
+.next/
+out/
+
+# Generic build output
+dist/
+build/
+
+# Java / Maven / Gradle
+**/target/
+.gradle/
+*.class
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Test coverage
+coverage/
+
+# Database / file backups
+backups/
+
+# Environment files (keep *.example templates tracked)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Production docker env (never commit real secrets)
+docker/.env.production

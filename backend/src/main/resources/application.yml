@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: CloudManagerPro
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  error:
+    include-stacktrace: never
+    include-message: always
+    include-binding-errors: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-please-use-a-long-random-development-secret-string-0001}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  encryption:
+    secret: ${ENCRYPTION_SECRET:change-me-please-use-a-long-random-development-secret-string-0002}
+  demo:
+    enabled: ${ENABLE_DEMO_DATA:true}
+  real-cloud-actions: ${ENABLE_REAL_CLOUD_ACTIONS:false}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:3000}
+  aws:
+    default-region: ${AWS_DEFAULT_REGION:us-east-1}
+  smtp:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    from: ${SMTP_FROM:CloudManagerPro <noreply@cloudmanagerpro.local>}
+  scheduler:
+    sync:
+      enabled: ${SCHEDULER_SYNC_ENABLED:true}
+      cron: ${SYNC_CRON:0 */10 * * * *}
+    analysis:
+      enabled: ${SCHEDULER_ANALYSIS_ENABLED:true}
+      cron: ${ANALYSIS_CRON:0 5 */1 * * *}
+    cost-ingestion:
+      enabled: ${SCHEDULER_COST_ENABLED:true}
+      cron: ${COST_CRON:0 30 2 * * *}
+    alert:
+      enabled: ${SCHEDULER_ALERT_ENABLED:true}
+      cron: ${ALERT_CRON:0 0 8 * * *}
+
+logging:
+  level:
+    root: INFO
+    com.cloudmanagerpro: INFO
+    org.springframework.security: WARN

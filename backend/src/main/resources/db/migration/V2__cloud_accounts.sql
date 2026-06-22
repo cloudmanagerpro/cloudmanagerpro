@@ -1,0 +1,20 @@
+create table cloud_accounts (
+    id                   uuid primary key,
+    user_id              uuid         not null,
+    name                 varchar(255) not null,
+    provider             varchar(16)  not null,
+    connection_status    varchar(16)  not null default 'PENDING',
+    encrypted_access_key text,
+    encrypted_secret_key text,
+    role_arn             varchar(255),
+    external_id          varchar(255),
+    default_region       varchar(64),
+    account_identifier   varchar(255),
+    last_sync_at         timestamptz,
+    last_sync_status     varchar(16),
+    last_error           text,
+    resource_count       integer       not null default 0,
+    monthly_cost         numeric(18,4) default 0,
+    created_at           timestamptz   not null,
+    updated_at           timestamptz   not null
+);

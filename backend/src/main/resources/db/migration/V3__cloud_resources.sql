@@ -1,0 +1,23 @@
+create table cloud_resources (
+    id               uuid primary key,
+    user_id          uuid         not null,
+    cloud_account_id uuid         not null,
+    provider         varchar(16)  not null,
+    resource_type    varchar(32)  not null,
+    external_id      varchar(255) not null,
+    name             varchar(255),
+    region           varchar(64),
+    status           varchar(64),
+    instance_type    varchar(64),
+    size_gb          integer,
+    cpu_utilization  double precision,
+    network_in_bytes double precision,
+    disk_io_bytes    double precision,
+    monthly_cost     numeric(18,4) default 0,
+    waste_state      varchar(32)  not null default 'NONE',
+    tags             jsonb,
+    metadata         jsonb,
+    last_activity_at timestamptz,
+    created_at       timestamptz  not null,
+    updated_at       timestamptz  not null
+);

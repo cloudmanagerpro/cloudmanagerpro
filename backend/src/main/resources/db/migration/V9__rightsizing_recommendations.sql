@@ -1,0 +1,23 @@
+create table rightsizing_recommendations (
+    id                        uuid primary key,
+    user_id                   uuid        not null,
+    resource_id               uuid,
+    cloud_account_id          uuid,
+    provider                  varchar(16) not null,
+    resource_type             varchar(32),
+    resource_name             varchar(255),
+    region                    varchar(64),
+    current_type              varchar(64),
+    recommended_type          varchar(64),
+    current_monthly_cost      numeric(18,4) default 0,
+    projected_monthly_cost    numeric(18,4) default 0,
+    estimated_monthly_savings numeric(18,4) default 0,
+    avg_cpu_utilization       double precision,
+    max_cpu_utilization       double precision,
+    confidence                varchar(16) not null default 'LOW',
+    reason                    text,
+    lookback_days             integer     not null default 14,
+    status                    varchar(16) default 'OPEN',
+    created_at                timestamptz not null,
+    updated_at                timestamptz not null
+);

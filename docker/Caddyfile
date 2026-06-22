@@ -1,0 +1,31 @@
+# =============================================================================
+# CloudManagerPro — Caddy reverse proxy (production, automatic HTTPS)
+#
+# Caddy obtains and renews a Let's Encrypt certificate for $APP_DOMAIN, redirects
+# HTTP -> HTTPS, and terminates TLS on 80/443. It proxies /api/* to the backend
+# (preserving the /api prefix the backend's context-path expects) and everything
+# else to the Next.js frontend.
+#
+# For local testing without a public domain you can set APP_DOMAIN=localhost
+# (Caddy issues an internal/self-signed cert) or APP_DOMAIN=:80 (plain HTTP).
+# =============================================================================
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# Backend API — keep the /api prefix (do NOT strip it).
+	reverse_proxy /api/* backend:8080
+
+	# Everything else — the Next.js frontend.
+	reverse_proxy frontend:3000
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# Don't advertise the server software.
+		-Server
+	}
+}
